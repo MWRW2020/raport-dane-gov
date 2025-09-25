@@ -12,7 +12,7 @@ CONFIG = {
     "ROK_ZBIORU": "2025",
     "INWESTYCJA_ID": "brzozowy_zakatek_kliny",
     "INWESTYCJA_URL": "https://www.mwrw.net/kliny",
-    "DANE_BASE_URL": "https://mwrw2020.github.io/dane-deweloper/",
+    "DANE_BASE_URL": "https://mwrw2020.github.io/raport-dane-gov/",
     "XML_FILENAME": "dane_deweloper_brzozowy",
 }
 # -----------------------------
@@ -121,4 +121,5 @@ if __name__ == "__main__":
     with open(md5_file_path, "w") as f:
         f.write(md5_sum)
     print(f"✅ Plik MD5 został wygenerowany: {md5_file_path}")
+
 
