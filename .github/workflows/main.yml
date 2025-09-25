@@ -1,0 +1,65 @@
+# Nazwa całego procesu automatyzacji
+name: Codzienne generowanie raportu dla dane.gov.pl
+
+on:
+  # Uruchamia proces automatycznie o określonej godzinie
+  schedule:
+    # Uruchamia się o 23:01 UTC, co odpowiada 00:01 lub 01:01 w Polsce
+    - cron: '1 23 * * *'
+  # Umożliwia ręczne uruchomienie procesu w interfejsie GitHub
+  workflow_dispatch:
+
+# Definiuje uprawnienia potrzebne dla automatu
+permissions:
+  contents: read
+  # Nadaje uprawnienia do tworzenia i publikowania strony GitHub Pages
+  pages: write
+  id-token: write
+
+# Definiuje zadania do wykonania
+jobs:
+  # Zadanie 1: Generowanie plików (artefaktu)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Krok 1: Pobranie kodu repozytorium na serwer wirtualny
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Krok 2: Ustawienie środowiska Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Krok 3: Uruchomienie skryptu Pythona do generowania plików XML i MD5
+      - name: Run script to generate XML and MD5
+        run: python generator_danych_gov.py
+
+      # Krok 4: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca)
+      - name: Prepare daily data file
+        run: |
+          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])")
+          TODAY_STR=$(date +'%Y-%m-%d')
+          cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
+      
+      # Krok 5: Spakowanie wszystkich wygenerowanych plików do "artefaktu" gotowego do publikacji
+      - name: Upload artifact for deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Ścieżka, z której pakujemy pliki (w naszym przypadku główny katalog)
+          path: .
+
+  # Zadanie 2: Publikacja strony z "artefaktu"
+  deploy:
+    # To zadanie jest zależne od pomyślnego ukończenia zadania 'build'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Krok 6: Użycie oficjalnej akcji do publikacji strony z przygotowanego artefaktu
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
