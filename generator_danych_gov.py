@@ -39,7 +39,7 @@ def generate_xml_content():
     # -----------------------------------------------------------------
 
     # --- Zbiór danych - <dataset> ---
-    dataset = SubElement(root, 'dataset', status='published')
+    dataset = SubElement(root, 'dataset', status='draft')
     
     SubElement(dataset, 'extIdent').text = f"dataset_{CONFIG['INWESTYCJA_ID']}"
     
@@ -70,7 +70,7 @@ def generate_xml_content():
     resources = SubElement(dataset, 'resources')
     
     # --- Zasób - <resource> ---
-    resource = SubElement(resources, 'resource', status='published')
+    resource = SubElement(resources, 'resource', status='draft')
     
     SubElement(resource, 'extIdent').text = f"resource_{CONFIG['INWESTYCJA_ID']}_{today_str_compact}"
     SubElement(resource, 'url').text = daily_data_url
@@ -121,5 +121,6 @@ if __name__ == "__main__":
     with open(md5_file_path, "w") as f:
         f.write(md5_sum)
     print(f"✅ Plik MD5 został wygenerowany: {md5_file_path}")
+
 
 
