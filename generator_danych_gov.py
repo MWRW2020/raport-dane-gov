@@ -8,7 +8,7 @@ import re
 # --- Konfiguracja (ZMIEŃ TE WARTOŚCI NA SWOJE) ---
 
 # 1. Nazwa dewelopera.
-DEWELOPER_NAME = "MWRW Deweloper"
+DEWELOPER_NAME = "MWRW Sp. z o.o."
 
 # 2. UNIKALNY, 36-ZNAKOWY ID ZBIORU DANYCH (Dataset) - NIE ZMIENIAĆ PO PIERWSZEJ PUBLIKACJI!
 DEWELOPER_EXTIDENT = "9543cc89-477f-4e21-b865-2aef92679a20" 
