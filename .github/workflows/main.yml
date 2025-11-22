@@ -1,85 +1,90 @@
 # Nazwa całego procesu automatyzacji
-name: Codzienne generowanie raportu dla dane.gov.pl
+name: Codzienne generowanie raportu dla dane.gov.pl [7, 8]
 
 on:
   # Uruchamia proces automatycznie codziennie
-  # W przykładzie użyto 49 22 UTC, co odpowiada nocy w Polsce (po północy czasu polskiego)
+  # W przykładzie użyto 49 22 UTC, co odpowiada 23:49 lub 00:49 w Polsce
   schedule:
-    - cron: '50 22 * * *' 
+    - cron: '49 22 * * *' # [7, 9]
   # Umożliwia ręczne uruchomienie procesu w interfejsie GitHub
-  workflow_dispatch: 
+  workflow_dispatch: [7, 9]
 
 # Definiuje uprawnienia wymagane dla automatu
 permissions:
-  # Użycie 'write' jest krytyczne dla akumulacji, ponieważ pozwala na commit zmienionych plików XML/MD5 z powrotem do repozytorium
-  contents: write # KONIECZNE DLA AKUMULACJI [1, 8, 10]
-  pages: write 
-  id-token: write 
+  # Użycie 'write' jest KRYTYCZNE dla AKUMULACJI, pozwala na commit zmienionych plików
+  contents: write # KONIECZNE DLA AKUMULACJI [10, 11]
+  pages: write [10, 11]
+  id-token: write [10, 11]
 
 # Definiuje zadania do wykonania
 jobs:
   # Zadanie 1: Generowanie plików, akumulacja i przygotowanie artefaktu
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest [10, 11]
     steps:
       # Krok 1: Pobranie kodu repozytorium na serwer wirtualny. Umożliwia odczyt i zapis.
-      - name: Checkout repository (Read/Write)
-        uses: actions/checkout@v3 
+      - name: Checkout repository (Read/Write) [10, 11]
+        uses: actions/checkout@v3 [10, 11]
         with:
           # Użycie GITHUB_TOKEN dla uprawnień do zapisu
-          token: ${{ secrets.GITHUB_TOKEN }} 
+          token: ${{ secrets.GITHUB_TOKEN }} [12, 13]
 
       # Krok 2: Ustawienie środowiska Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python [12, 13]
+        uses: actions/setup-python@v4 [12, 13]
         with:
-          python-version: '3.10'
+          python-version: '3.10' [12, 13]
           
       # Krok 3: Uruchomienie skryptu Pythona do generowania plików XML i MD5
-      # Skrypt działa w trybie AKUMULACJI: wczytuje istniejący XML, dodaje nowy <resource> i nadpisuje XML/MD5.
-      - name: Run script to generate XML and MD5 (Accumulation Mode)
-        run: python generator_danych_gov.py
-        
+      # Skrypt działa w trybie AKUMULACJI: wczytuje istniejący XML, dodaje nowy <resource> i nadpisuje XML/MD5 [12, 13].
+      - name: Run script to generate XML and MD5 (Accumulation Mode) [12, 13]
+        run: python generator_danych_gov.py [12, 13]
+
+      # ***************************************************************
+      # DODATKOWY KROK DIAGNOSTYCZNY: Wymuszenie przełamania buforowania
+      # Ten krok jest dodany w celu przełamania buforowania starego kodu Pythona w runnerze.
+      - name: Force buffer refresh (Diagnostic step)
+        run: touch temp_reset_file.txt
+      # ***************************************************************
+
       # Krok 4: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
-      # Ten plik jest wymagany, aby codzienny wpis <resource> w XML mógł wskazywać na unikalny URL [11-14].
-      - name: Prepare daily data file (XLSX/CSV)
+      # Ten plik jest wymagany, aby codzienny wpis <resource> w XML mógł wskazywać na unikalny URL [14, 15].
+      - name: Prepare daily data file (XLSX/CSV) [14, 15]
         run: | 
           # POBIERANIE ZMIENNYCH Z PLIKU CONFIG W PYTHONIE
-          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") 
+          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") [14, 15]
           TODAY_STR=$(date +'%Y-%m-%d')
           # Kopiowanie wzorca na unikalną, datowaną nazwę
-          cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
+          cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx" [5, 15]
           
       # ***************************************************************
       # KROK 5: ZAPISANIE ZAAKUMULOWANYCH PLIKÓW Z POWROTEM DO GAŁĘZI 'MAIN'
-      # TEN KROK JEST KRYTYCZNY DLA AKUMULACJI DANYCH!
-      # Gwarantuje, że plik XML z danymi z poprzednich dni będzie dostępny przy kolejnym uruchomieniu skryptu [8, 10].
-      - name: Commit accumulated files back to main branch
-        # Używamy akcji auto-commit do zatwierdzenia zmian
-        uses: stefanzweifel/git-auto-commit-action@v5 
+      # TEN KROK JEST KRYTYCZNY DLA AKUMULACJI DANYCH! [5, 6]
+      - name: Commit accumulated files back to main branch [5, 6]
+        uses: stefanzweifel/git-auto-commit-action@v5 [6, 16]
         with:
-          commit_message: "Automatyczna aktualizacja: Dodanie dziennego raportu do XML/MD5"
+          commit_message: "Automatyczna aktualizacja: Dodanie dziennego raportu do XML/MD5" [6, 16]
           # Wzór plików, które mają zostać zapisane: XML, MD5 oraz dzienny plik z danymi (XLSX)
-          file_pattern: "*.xml *.md5 *.xlsx" 
+          file_pattern: "*.xml *.md5 *.xlsx" [6, 16]
       # ***************************************************************
           
       # Krok 6: Spakowanie wszystkich wygenerowanych plików do "artefaktu" gotowego do publikacji
-      - name: Upload artifact for deployment
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact for deployment [16, 17]
+        uses: actions/upload-pages-artifact@v3 [17, 18]
         with:
           # Ścieżka, z której pakujemy pliki (cały katalog roboczy, zawierający XML, MD5 i XLSX)
-          path: .
+          path: . [17, 18]
           
   # Zadanie 2: Publikacja strony z "artefaktu" (Deployment)
   deploy:
     # To zadanie musi czekać na pomyślne ukończenie zadania 'build' (generowanie i commit)
-    needs: build
-    runs-on: ubuntu-latest
+    needs: build [17, 18]
+    runs-on: ubuntu-latest [17, 18]
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: github-pages [17, 18]
+      url: ${{ steps.deployment.outputs.page_url }} [18]
     steps:
       # Krok 7: Użycie oficjalnej akcji do publikacji strony z przygotowanego artefaktu
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages [19]
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4 [19]
