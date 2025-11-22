@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<p:datasets xmlns:p="https://www.dane.gov.pl/static/xml/otwarte_dane_latest.xsd">
+    <dataset status="draft">
+        <extIdent>dataset_brzozowy_zakatek_kliny</extIdent>
+        <title>
+            <polish>Ceny ofertowe mieszkań dewelopera MWRW Sp. z o.o. w 2025 r.</polish>
+            <english>Offer prices of apartments of developer MWRW Sp. z o.o. in 2025.</english>
+        </title>
+        <description>
+            <polish>Zbiór danych zawiera informacje o cenach ofertowych mieszkań dewelopera MWRW Sp. z o.o. udostępniane zgodnie z art. 19b. ust. 1 Ustawy z dnia 20 maja 2021 r.</polish>
+            <english>Data on offer prices of apartments of the developer MWRW Sp. z o.o. made available in accordance with art. 19b. ust. 1 Ustawy z dnia 20 maja 2021 r.</english>
+        </description>
+        <url>https://www.mwrw.net/kliny</url>
+        <categories>
+            <category>ECON</category>
+        </categories>
+        <tags>
+            <tag>deweloper</tag>
+        </tags>
+        <updateFrequency>daily</updateFrequency>
+        <hasDynamicData>false</hasDynamicData>
+        <hasHighValueData>true</hasHighValueData>
+        <hasHighValueDataFromEuropeanCommissionList>false</hasHighValueDataFromEuropeanCommissionList>
+        <hasResearchData>false</hasResearchData>
+        <resources>
+            <!-- Tutaj będą dodawane automatycznie zasoby -->
+        </resources>
+    </dataset>
+</p:datasets>
