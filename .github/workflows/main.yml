@@ -28,26 +28,17 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: 2.5. Czyszczenie pliku z niewidocznych znaków (FIX)
-        # Ten krok powinien usunąć najpopularniejsze problemy
+      - name: 2.5. CZYSZCZENIE NUKLEARNE PLIKU PYTHON
+        # Ten krok usuwa WSZYSTKIE znaki kontrolne i niewidoczne, pozostawiając tylko
+        # standardowy tekst, w tym polskie znaki UTF-8. To jest ostateczne rozwiązanie.
         run: |
-          echo "Czyszczenie pliku generator_danych_gov.py z ukrytych znaków..."
-          # Usuń znaki niełamiącej spacji (NBSP)
-          sed -i 's/[\xC2\xA0]//g' generator_danych_gov.py
-          # Usuń znaki powrotu karetki (CR)
-          sed -i 's/[\r]//g' generator_danych_gov.py
-          echo "Plik został wyczyszczony."
-
-      - name: 2.6. DIAGNOSTYKA (Ostateczna)
-        # Użycie 'od -c' do wyświetlenia każdego bajtu, aby znaleźć niewidzialny błąd.
-        run: |
-          echo "### OSTATECZNA DIAGNOSTYKA BAJTÓW PLIKU PYTHON ###"
-          # Wyświetla plik bajt po bajcie. Znak błędu pokaże się jako kod numeryczny.
-          od -c generator_danych_gov.py | head -n 30
-          echo "### KONIEC DIAGNOSTYKI ###"
+          echo "Wykonywanie nuklearnego czyszczenia generator_danych_gov.py..."
+          # Tworzy tymczasowy, czysty plik, zachowując tylko czytelne bajty.
+          tr -cd '\11\12\15\40-\377' < generator_danych_gov.py > temp_clean.py
+          mv temp_clean.py generator_danych_gov.py
+          echo "Plik został ekstremalnie wyczyszczony."
 
       - name: 3. Uruchomienie skryptu generującego XML i MD5
-        # Ten krok się ponownie nie powiedzie, ale my będziemy mieli log z Kroku 2.6
         run: python generator_danych_gov.py
 
       - name: 4. Konfiguracja GitHub Pages
