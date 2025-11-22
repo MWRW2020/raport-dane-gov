@@ -28,19 +28,19 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: 2.5. DIAGNOSTYKA BŁĘDNYCH ZNAKÓW
-        # Użycie 'cat -v' by pokazać niewidzialne znaki Unicode w pliku (np. M-A dla niełamiącej spacji)
+      - name: 2.5. Czyszczenie pliku z niewidocznych znaków (FIX)
+        # Usuwa znaki, które mogły trafić do pliku podczas kopiowania i powodują błąd 'TypeError'
         run: |
-          echo "### DIAGNOSTYKA - Analiza pliku generator_danych_gov.py ###"
-          echo "--- Uwaga: '^M' to CR/Windows, 'M-A' to często ukryte spacje, '^I' to tabulatory. ---"
-          # Wyświetla pierwszych 80 linii z widocznymi ukrytymi znakami
-          cat -v generator_danych_gov.py | head -n 80
-          echo "### KONIEC DIAGNOSTYKI ###"
+          echo "Czyszczenie pliku generator_danych_gov.py z ukrytych znaków..."
+          # Usuń znaki niełamiącej spacji (NBSP)
+          sed -i 's/[\xC2\xA0]//g' generator_danych_gov.py
+          # Usuń znaki powrotu karetki (CR)
+          sed -i 's/[\r]//g' generator_danych_gov.py
+          echo "Plik został wyczyszczony."
 
       - name: 3. Uruchomienie skryptu generującego XML i MD5
-        # Ten krok się nadal nie powiedzie, ale my chcemy zobaczyć logi z poprzedniego kroku
         run: python generator_danych_gov.py
-        
+
       - name: 4. Konfiguracja GitHub Pages
         uses: actions/configure-pages@v5
 
