@@ -11,7 +11,7 @@ ET.register_namespace('p', 'https://www.dane.gov.pl/static/xml/otwarte_dane_late
 CONFIG = {
     "DEWELOPER_NAZWA": "MWRW Sp. z o.o.",
     "INWESTYCJA_NAZWA": "Brzozowy Zakątek",
-    "ROK_ZBIORU": "2025",
+    "ROK_ZBIORU": "2026",
     "INWESTYCJA_ID": "brzozowy_zakatek_kliny",
     "INWESTYCJA_URL": "https://www.mwrw.net/kliny",
     "DANE_BASE_URL": "https://mwrw2020.github.io/raport-dane-gov/",
