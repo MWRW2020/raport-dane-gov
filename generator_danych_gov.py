@@ -79,8 +79,8 @@ def create_base_dataset():
     research_data_elem.text = 'false'
     
     # Kategoria: Gospodarka i finanse (Bezpieczna składnia)
-    categories = ET.SubElement(dataset, 'categories')
-    category_elem = ET.SubElement(categories, 'category')
+    #categories = ET.SubElement(dataset, 'categories')
+    #category_elem = ET.SubElement(categories, 'category')
     #category_elem.text = 'ECON'
     
     # Dodanie sekcji TAGS
