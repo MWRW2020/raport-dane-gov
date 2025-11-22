@@ -1,81 +1,56 @@
-# Nazwa całego procesu automatyzacji
-name: Codzienne generowanie raportu dla dane.gov.pl
+name: Codzienny Raport Cen Mieszkań dla dane.gov.pl
 
+# Uruchamia workflow codziennie o północy (00:00 UTC).
 on:
-  # Uruchamia proces automatycznie codziennie
   schedule:
-    - cron: '49 22 * * *' 
-  workflow_dispatch: 
-
-# Definiuje uprawnienia
-permissions:
-  contents: write # KRYTYCZNE DLA AKUMULACJI
-  pages: write 
-  id-token: write 
+    - cron: '0 0 * * *'
+  # Umożliwia ręczne uruchomienie workflow z poziomu interfejsu GitHub.
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
-    steps:
-      
-      # Krok 1: Twardy Reset Cache - usuwa potencjalnie buforowane pliki przed checkoutem
-      - name: Hard Reset Cache (Pre-Checkout Cleanup)
-        run: |
-          rm -rf $GITHUB_WORKSPACE/*
-          
-      # Krok 2: Pobranie kodu repozytorium (Checkout)
-      - name: Checkout repository (Read/Write)
-        uses: actions/checkout@v3 
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
-
-      # Krok 3: Ustawienie środowiska Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          
-      # ***************************************************************
-      # Krok 4: Uruchomienie skryptu w izolacji
-      # Zamiast polegać na prostym "python skrypt.py", używamy pełnej ścieżki i pip
-      # (Maksymalne wymuszenie czystego środowiska)
-      - name: Run script in isolated environment
-        run: |
-          # Instalacja wymaganych bibliotek (jeśli są) w czystym środowisku
-          pip install --upgrade pip
-          # Uruchomienie skryptu Pythona
-          python generator_danych_gov.py
-      # ***************************************************************
-          
-      # Krok 5: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
-      - name: Prepare daily data file (XLSX/CSV)
-        run: | 
-          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") 
-          TODAY_STR=$(date +'%Y-%m-%d')
-          cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
-          
-      # KROK 6: ZAPISANIE (COMMIT) ZAAKUMULOWANYCH PLIKÓW
-      - name: Commit accumulated files back to main branch
-        uses: stefanzweifel/git-auto-commit-action@v5 
-        with:
-          commit_message: "Automatyczna aktualizacja: Dodanie dziennego raportu do XML/MD5"
-          file_pattern: "*.xml *.md5 *.xlsx" 
-          
-      # Krok 7: Spakowanie artefaktu
-      - name: Upload artifact for deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-          
-  # Zadanie 2: Publikacja strony (Deployment)
-  deploy:
-    needs: build
+  generate_and_publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Krok 8: Użycie oficjalnej akcji do publikacji strony
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: 1. Sprawdzenie kodu (Checkout)
+        uses: actions/checkout@v4
+        
+      - name: 2. Konfiguracja środowiska Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # WAŻNY KROK: Upewnij się, że plik dane_wzor.xlsx jest aktualizowany.
+      # Jeśli Twój plik Python TYLKO generuje XML/MD5, a dane_wzor.xlsx jest 
+      # aktualizowany ręcznie lub przez inny skrypt, upewnij się, że jest w repozytorium.
+
+      - name: 3. Uruchomienie skryptu generującego XML i MD5
+        # Skrypt wygeneruje pliki: raport_cen_mieszkan.xml i raport_cen_mieszkan.md5
+        run: python generator_danych_gov.py
+        
+      - name: 4. Konfiguracja Gita dla commita
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: 5. Sprawdzenie, czy pliki zostały zmienione
+        # Sprawdza, czy skrypt wprowadził zmiany, aby uniknąć pustych commitów
+        id: git_status
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 6. Zapisanie zmian i publikacja (Commit & Push)
+        if: steps.git_status.outputs.changes == 'true'
+        run: |
+          # Dodaj wygenerowane pliki XML i MD5 ORAZ PLIK Z DANYMI (dane_wzor.xlsx)
+          git add raport_cen_mieszkan.xml raport_cen_mieszkan.md5 dane_wzor.xlsx
+          
+          # Użycie daty w komunikacie commitu
+          TIMESTAMP=$(date -u +%Y-%m-%d)
+          git commit -m "Automatyczny raport dane.gov.pl - ${TIMESTAMP}"
+          
+          # Wypchnięcie zmian do repozytorium
+          git push
