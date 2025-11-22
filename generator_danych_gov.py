@@ -45,6 +45,7 @@ def create_dataset_structure(root):
     ET.SubElement(description_dataset, 'english').text = desc_text_pl
     
     ET.SubElement(dataset, 'url').text = CONFIG['INWESTYCJA_URL']
+    #WTF
     
     # *******************************************************************
     # KOREKTA BŁĘDU (KONIECZNIE DWIE LINIE): Zapewnienie zagnieżdżonej struktury <categories><category>
@@ -194,3 +195,4 @@ def generate_xml_and_md5():
 
 if __name__ == "__main__":
     generate_xml_and_md5()
+
