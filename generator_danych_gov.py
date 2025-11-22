@@ -45,7 +45,7 @@ def create_dataset_structure(root):
     
     ET.SubElement(dataset, 'url').text = CONFIG['INWESTYCJA_URL']
     
-    # PRAWIDŁOWA KOREKTA BŁĘDU: ZAPEWNIENIE ZAGNIEŻDŻONEJ STRUKTURY <categories><category>ECON</category></categories>
+    # Wymagane jest <categories><category>ECON</category></categories>
     categories = ET.SubElement(dataset, 'categories')
     ET.SubElement(categories, 'category').text = 'ECON'
     
@@ -187,3 +187,4 @@ def generate_xml_and_md5():
 
 if __name__ == "__main__":
     generate_xml_and_md5()
+
