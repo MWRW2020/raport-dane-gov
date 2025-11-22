@@ -21,7 +21,7 @@ RESOURCE_BASE_URL = "https://mwrw2020.github.io/raport-dane-gov"
 ACTUAL_DATA_FILENAME = "dane_wzor.xlsx"
 
 # 5. Ograniczenie: ile dni wstecz zasoby mają być trzymane w pliku XML
-MAX_HISTORY_DAYS = 30 
+MAX_HISTORY_DAYS = 3000 
 
 # Nazwy generowanych plików wyjściowych
 XML_FILE_NAME = "raport_cen_mieszkan.xml"
