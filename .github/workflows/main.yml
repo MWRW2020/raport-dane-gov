@@ -4,48 +4,46 @@ name: Codzienne generowanie raportu dla dane.gov.pl
 on:
   # Uruchamia proces automatycznie codziennie
   schedule:
-    - cron: '49 22 * * *' 
+    - cron: '49 22 * * *' # Czas UTC
   # Umożliwia ręczne uruchomienie procesu w interfejsie GitHub
   workflow_dispatch: 
 
 # Definiuje uprawnienia wymagane dla automatu
 permissions:
-  contents: write 
+  contents: write # KRYTYCZNE DLA AKUMULACJI
   pages: write 
   id-token: write 
 
 # Definiuje zadania do wykonania
 jobs:
+  # Zadanie 1: Generowanie plików, akumulacja i przygotowanie artefaktu
   build:
-    runs-on: ubuntu-latest
+    # OSTATECZNA ZMIANA: Wymuszenie nowego środowiska wykonawczego
+    runs-on: ubuntu-22.04
     steps:
-      # ***************************************************************
-      # NOWY, RADYKALNY KROK RESETUJĄCY: Usuwa potencjalnie buforowane pliki przed checkoutem
+      
+      # Krok 1: Twardy Reset Cache - usuwa potencjalnie buforowane pliki przed checkoutem
       - name: Hard Reset Cache (Pre-Checkout Cleanup)
         run: |
           rm -rf $GITHUB_WORKSPACE/*
           
-      # Krok 1: Pobranie kodu repozytorium (Checkout)
+      # Krok 2: Pobranie kodu repozytorium (Checkout)
       - name: Checkout repository (Read/Write)
         uses: actions/checkout@v3 
         with:
           token: ${{ secrets.GITHUB_TOKEN }} 
 
-      # Krok 2: Ustawienie środowiska Python
+      # Krok 3: Ustawienie środowiska Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           
-      # Krok 3: Uruchomienie skryptu Pythona (Akumulacja Danych)
+      # Krok 4: Uruchomienie skryptu Pythona (Akumulacja Danych)
       - name: Run script to generate XML and MD5 (Accumulation Mode)
         run: python generator_danych_gov.py
         
-      # Krok 3.1: Wymuszenie przełamania buforowania (Krok Diagnostyczny)
-      - name: Force buffer refresh
-        run: touch temp_reset_file.txt
-          
-      # Krok 4: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
+      # Krok 5: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
       - name: Prepare daily data file (XLSX/CSV)
         run: | 
           # POBIERANIE ZMIENNYCH Z PLIKU CONFIG W PYTHONIE
@@ -54,14 +52,14 @@ jobs:
           # Kopiowanie wzorca na unikalną, datowaną nazwę
           cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
           
-      # KROK 5: ZAPISANIE (COMMIT) ZAAKUMULOWANYCH PLIKÓW
+      # KROK 6: ZAPISANIE (COMMIT) ZAAKUMULOWANYCH PLIKÓW
       - name: Commit accumulated files back to main branch
         uses: stefanzweifel/git-auto-commit-action@v5 
         with:
           commit_message: "Automatyczna aktualizacja: Dodanie dziennego raportu do XML/MD5"
           file_pattern: "*.xml *.md5 *.xlsx" 
           
-      # Krok 6: Spakowanie artefaktu
+      # Krok 7: Spakowanie artefaktu
       - name: Upload artifact for deployment
         uses: actions/upload-pages-artifact@v3
         with:
@@ -75,7 +73,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Krok 7: Użycie oficjalnej akcji do publikacji strony
+      # Krok 8: Użycie oficjalnej akcji do publikacji strony
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
