@@ -29,7 +29,7 @@ jobs:
           python-version: '3.x'
 
       - name: 2.5. Czyszczenie pliku z niewidocznych znaków (FIX)
-        # Usuwa znaki, które mogły trafić do pliku podczas kopiowania i powodują błąd 'TypeError'
+        # Ten krok powinien usunąć najpopularniejsze problemy
         run: |
           echo "Czyszczenie pliku generator_danych_gov.py z ukrytych znaków..."
           # Usuń znaki niełamiącej spacji (NBSP)
@@ -38,7 +38,16 @@ jobs:
           sed -i 's/[\r]//g' generator_danych_gov.py
           echo "Plik został wyczyszczony."
 
+      - name: 2.6. DIAGNOSTYKA (Ostateczna)
+        # Użycie 'od -c' do wyświetlenia każdego bajtu, aby znaleźć niewidzialny błąd.
+        run: |
+          echo "### OSTATECZNA DIAGNOSTYKA BAJTÓW PLIKU PYTHON ###"
+          # Wyświetla plik bajt po bajcie. Znak błędu pokaże się jako kod numeryczny.
+          od -c generator_danych_gov.py | head -n 30
+          echo "### KONIEC DIAGNOSTYKI ###"
+
       - name: 3. Uruchomienie skryptu generującego XML i MD5
+        # Ten krok się ponownie nie powiedzie, ale my będziemy mieli log z Kroku 2.6
         run: python generator_danych_gov.py
 
       - name: 4. Konfiguracja GitHub Pages
