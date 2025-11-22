@@ -5,7 +5,7 @@ on:
   # Uruchamia proces automatycznie codziennie
   # W przykładzie użyto 49 22 UTC, co odpowiada nocy w Polsce (po północy czasu polskiego)
   schedule:
-    - cron: '49 22 * * *' 
+    - cron: '50 22 * * *' 
   # Umożliwia ręczne uruchomienie procesu w interfejsie GitHub
   workflow_dispatch: 
 
