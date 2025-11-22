@@ -2,80 +2,84 @@
 name: Codzienne generowanie raportu dla dane.gov.pl
 
 on:
-  # Uruchamia proces automatycznie o określonej godzinie
+  # Uruchamia proces automatycznie codziennie
+  # W przykładzie użyto 49 22 UTC, co odpowiada nocy w Polsce (po północy czasu polskiego)
   schedule:
-    # Uruchamia się o 22:49 UTC, co odpowiada 23:49 lub 00:49 w Polsce
-    # (Zgodnie z Pańską dotychczasową konfiguracją)
-    - cron: '49 22 * * *' # [1]
+    - cron: '49 22 * * *' 
   # Umożliwia ręczne uruchomienie procesu w interfejsie GitHub
-  workflow_dispatch: # [1]
+  workflow_dispatch: 
 
-# Definiuje uprawnienia potrzebne dla automatu
+# Definiuje uprawnienia wymagane dla automatu
 permissions:
-  # Zmieniono z 'read' na 'write' dla 'contents', aby umożliwić zapisanie (commit)
-  # zaktualizowanego, skumulowanego pliku XML z powrotem do gałęzi main.
-  contents: write # KONIECZNE DLA AKUMULACJI
-  pages: write # [1]
-  id-token: write # [2]
+  # Użycie 'write' jest krytyczne dla akumulacji, ponieważ pozwala na commit zmienionych plików XML/MD5 z powrotem do repozytorium
+  contents: write # KONIECZNE DLA AKUMULACJI [1, 8, 10]
+  pages: write 
+  id-token: write 
 
 # Definiuje zadania do wykonania
-jobs: # [2]
+jobs:
   # Zadanie 1: Generowanie plików, akumulacja i przygotowanie artefaktu
   build:
-    runs-on: ubuntu-latest # [2]
+    runs-on: ubuntu-latest
     steps:
-      # Krok 1: Pobranie kodu repozytorium na serwer wirtualny
+      # Krok 1: Pobranie kodu repozytorium na serwer wirtualny. Umożliwia odczyt i zapis.
       - name: Checkout repository (Read/Write)
-        uses: actions/checkout@v3 # [2]
+        uses: actions/checkout@v3 
         with:
-          # Użycie tokenu, by akcja miała uprawnienia do zapisu w Kroku 5
+          # Użycie GITHUB_TOKEN dla uprawnień do zapisu
           token: ${{ secrets.GITHUB_TOKEN }} 
 
       # Krok 2: Ustawienie środowiska Python
       - name: Set up Python
-        uses: actions/setup-python@v4 # [2]
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.10' # [2]
+          python-version: '3.10'
           
       # Krok 3: Uruchomienie skryptu Pythona do generowania plików XML i MD5
-      # Ten skrypt wczytuje istniejący plik XML, dodaje nowy <resource> i nadpisuje XML/MD5.
+      # Skrypt działa w trybie AKUMULACJI: wczytuje istniejący XML, dodaje nowy <resource> i nadpisuje XML/MD5.
       - name: Run script to generate XML and MD5 (Accumulation Mode)
-        run: python generator_danych_gov.py # [3]
+        run: python generator_danych_gov.py
         
       # Krok 4: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
+      # Ten plik jest wymagany, aby codzienny wpis <resource> w XML mógł wskazywać na unikalny URL [11-14].
       - name: Prepare daily data file (XLSX/CSV)
-        run: | # [3]
-          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") # [3]
+        run: | 
+          # POBIERANIE ZMIENNYCH Z PLIKU CONFIG W PYTHONIE
+          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") 
           TODAY_STR=$(date +'%Y-%m-%d')
-          cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx" # [3]
+          # Kopiowanie wzorca na unikalną, datowaną nazwę
+          cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
           
-      # Krok 5: Zapisanie (COMMIT) zaktualizowanych plików z powrotem do gałęzi 'main'
-      # TEN KROK GWARANTUJE AKUMULACJĘ DANYCH!
+      # ***************************************************************
+      # KROK 5: ZAPISANIE ZAAKUMULOWANYCH PLIKÓW Z POWROTEM DO GAŁĘZI 'MAIN'
+      # TEN KROK JEST KRYTYCZNY DLA AKUMULACJI DANYCH!
+      # Gwarantuje, że plik XML z danymi z poprzednich dni będzie dostępny przy kolejnym uruchomieniu skryptu [8, 10].
       - name: Commit accumulated files back to main branch
-        # UWAGA: Ta akcja (stefanzweifel/git-auto-commit-action) jest zewnętrznym narzędziem technicznym 
-        # wymaganym, aby logika akumulacyjna mogła zapisać zmiany w repozytorium na potrzeby kolejnego uruchomienia.
+        # Używamy akcji auto-commit do zatwierdzenia zmian
         uses: stefanzweifel/git-auto-commit-action@v5 
         with:
           commit_message: "Automatyczna aktualizacja: Dodanie dziennego raportu do XML/MD5"
+          # Wzór plików, które mają zostać zapisane: XML, MD5 oraz dzienny plik z danymi (XLSX)
           file_pattern: "*.xml *.md5 *.xlsx" 
+      # ***************************************************************
           
       # Krok 6: Spakowanie wszystkich wygenerowanych plików do "artefaktu" gotowego do publikacji
       - name: Upload artifact for deployment
-        uses: actions/upload-pages-artifact@v3 # [4]
+        uses: actions/upload-pages-artifact@v3
         with:
-          # Ścieżka, z której pakujemy pliki (w naszym przypadku główny katalog)
-          path: . # [4]
+          # Ścieżka, z której pakujemy pliki (cały katalog roboczy, zawierający XML, MD5 i XLSX)
+          path: .
           
   # Zadanie 2: Publikacja strony z "artefaktu" (Deployment)
-  deploy: # [4]
-    # To zadanie jest zależne od pomyślnego ukończenia zadania 'build'
-    needs: build # [4]
-    runs-on: ubuntu-latest # [4]
-    environment: # [4]
-      name: github-pages # [4]
-      url: ${{ steps.deployment.outputs.page_url }} # [4]
+  deploy:
+    # To zadanie musi czekać na pomyślne ukończenie zadania 'build' (generowanie i commit)
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       # Krok 7: Użycie oficjalnej akcji do publikacji strony z przygotowanego artefaktu
       - name: Deploy to GitHub Pages
-        id: deployment # [5]
-        uses: actions/deploy-pages@v4 # [5]
+        id: deployment
+        uses: actions/deploy-pages@v4
