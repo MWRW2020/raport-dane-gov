@@ -1,56 +1,57 @@
-name: Codzienny Raport Cen Mieszkań dla dane.gov.pl
+name: 🇵🇱 Generowanie XML i publikacja na GitHub Pages
 
-# Uruchamia workflow codziennie o północy (00:00 UTC).
 on:
+  push:
+    branches:
+      - main
   schedule:
+    # Uruchomienie o północy (00:00 UTC) każdego dnia (czyli ok. 1:00/2:00 CET/CEST)
     - cron: '0 0 * * *'
-  # Umożliwia ręczne uruchomienie workflow z poziomu interfejsu GitHub.
   workflow_dispatch:
 
 jobs:
   generate_and_publish:
     runs-on: ubuntu-latest
+    
+    # Ustawienie uprawnień do repozytorium
+    permissions:
+      contents: write # Wymagane do zapisu wygenerowanych plików (XML i MD5)
+      pages: write    # Wymagane do publikacji na GitHub Pages
+      id-token: write # Wymagane do uwierzytelniania w Pages
+
     steps:
-      - name: 1. Sprawdzenie kodu (Checkout)
+      - name: 1. Checkout repository (Read/Write)
         uses: actions/checkout@v4
-        
+
       - name: 2. Konfiguracja środowiska Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # WAŻNY KROK: Upewnij się, że plik dane_wzor.xlsx jest aktualizowany.
-      # Jeśli Twój plik Python TYLKO generuje XML/MD5, a dane_wzor.xlsx jest 
-      # aktualizowany ręcznie lub przez inny skrypt, upewnij się, że jest w repozytorium.
+      - name: 2.5. Czyszczenie pliku z niewidocznych znaków (FIX)
+        # Ten krok usuwa znaki niełamiącej spacji (\xC2\xA0) i powrotu karetki (\r), 
+        # które mogły trafić do pliku podczas kopiowania i powodują błąd 'TypeError'.
+        run: |
+          echo "Czyszczenie pliku generator_danych_gov.py z ukrytych znaków..."
+          # Usuń znaki niełamiącej spacji (NBSP)
+          sed -i 's/[\xC2\xA0]//g' generator_danych_gov.py
+          # Usuń znaki powrotu karetki (CR)
+          sed -i 's/[\r]//g' generator_danych_gov.py
+          echo "Plik został wyczyszczony."
 
       - name: 3. Uruchomienie skryptu generującego XML i MD5
-        # Skrypt wygeneruje pliki: raport_cen_mieszkan.xml i raport_cen_mieszkan.md5
+        # Wygeneruje raport_cen_mieszkan.xml i raport_cen_mieszkan.md5
         run: python generator_danych_gov.py
-        
-      - name: 4. Konfiguracja Gita dla commita
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
 
-      - name: 5. Sprawdzenie, czy pliki zostały zmienione
-        # Sprawdza, czy skrypt wprowadził zmiany, aby uniknąć pustych commitów
-        id: git_status
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "changes=false" >> $GITHUB_OUTPUT
-          fi
-          
-      - name: 6. Zapisanie zmian i publikacja (Commit & Push)
-        if: steps.git_status.outputs.changes == 'true'
-        run: |
-          # Dodaj wygenerowane pliki XML i MD5 ORAZ PLIK Z DANYMI (dane_wzor.xlsx)
-          git add raport_cen_mieszkan.xml raport_cen_mieszkan.md5 dane_wzor.xlsx
-          
-          # Użycie daty w komunikacie commitu
-          TIMESTAMP=$(date -u +%Y-%m-%d)
-          git commit -m "Automatyczny raport dane.gov.pl - ${TIMESTAMP}"
-          
-          # Wypchnięcie zmian do repozytorium
-          git push
+      - name: 4. Konfiguracja GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 5. Wgranie artefaktów do Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Katalog, który zostanie opublikowany (zawiera XML, MD5, XLSX)
+          path: './'
+
+      - name: 6. Publikacja na GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
