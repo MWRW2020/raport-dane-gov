@@ -24,10 +24,11 @@ CONFIG = {
 def create_dataset_structure(root):
     """
     Tworzy podstawową strukturę <dataset> dla pierwszego uruchomienia.
-    Zawiera trwałą KOREKTĘ błędu TypeError w sekcji <categories>.
+    Zawiera KOREKTĘ błędu TypeError w sekcji <categories>.
     """
     
     # Tworzenie elementu <dataset> z pełną przestrzenią nazw
+    # Atrybut status='draft' jest na czas testów. Docelowo: 'published' [7, 8].
     dataset = ET.SubElement(root, f"{{{CONFIG['SCHEMA_URL']}}}dataset", status='draft') 
     
     ET.SubElement(dataset, 'extIdent').text = f"dataset_{CONFIG['INWESTYCJA_ID']}"
@@ -45,18 +46,20 @@ def create_dataset_structure(root):
     
     ET.SubElement(dataset, 'url').text = CONFIG['INWESTYCJA_URL']
     
-    # Wymagane jest <categories><category>ECON</category></categories>
-    categories = ET.SubElement(dataset, 'categories')
-    ET.SubElement(categories, 'category').text = 'ECON'
+    # *******************************************************************
+    # KOREKTA BŁĘDU (KONIECZNIE DWIE LINIE): Zapewnienie zagnieżdżonej struktury <categories><category>
+    categories = ET.SubElement(dataset, 'categories') # Linia 80: Tworzymy tag nadrzędny
+    ET.SubElement(categories, 'category').text = 'ECON' # Linia 81: Tworzymy tag zagnieżdżony (Gospodarka i finanse) [5, 6]
+    # *******************************************************************
     
     tags = ET.SubElement(dataset, 'tags')
     ET.SubElement(tags, 'tag').text = 'deweloper'
     
-    ET.SubElement(dataset, 'updateFrequency').text = 'daily' # [3, 4]
-    ET.SubElement(dataset, 'hasDynamicData').text = 'false' # [4, 5]
-    ET.SubElement(dataset, 'hasHighValueData').text = 'true' # [4, 5]
-    ET.SubElement(dataset, 'hasHighValueDataFromEuropeanCommissionList').text = 'false' # [4, 5]
-    ET.SubElement(dataset, 'hasResearchData').text = 'false' # [4, 5]
+    ET.SubElement(dataset, 'updateFrequency').text = 'daily' # Wymagane [9]
+    ET.SubElement(dataset, 'hasDynamicData').text = 'false' # Wymagane [9]
+    ET.SubElement(dataset, 'hasHighValueData').text = 'true' # Wymagane [9]
+    ET.SubElement(dataset, 'hasHighValueDataFromEuropeanCommissionList').text = 'false' # Wymagane [10]
+    ET.SubElement(dataset, 'hasResearchData').text = 'false' # Wymagane [10]
     
     resources = ET.SubElement(dataset, 'resources')
     
@@ -73,11 +76,11 @@ def create_resource_element(resources_element_et, today_str, today_str_compact, 
         print(f"  Zasób dla daty {today_str} (extIdent: {ext_ident_today}) już istnieje w pliku. Nie dodano nowego wpisu.")
         return False
         
-    # 2. Tworzenie i dodawanie nowego zasobu (status='draft' na czas testów)
+    # 2. Tworzenie i dodawanie nowego zasobu (status='draft' na czas testów) [7, 8]
     resource = ET.SubElement(resources_element_et, 'resource', status='draft')
     
-    ET.SubElement(resource, 'extIdent').text = ext_ident_today # Identyfikator musi być unikalny dla każdego dnia [6]
-    ET.SubElement(resource, 'url').text = daily_data_url # Link do pliku Excel/CSV z danymi na dany dzień [6]
+    ET.SubElement(resource, 'extIdent').text = ext_ident_today # Unikalny identyfikator [11]
+    ET.SubElement(resource, 'url').text = daily_data_url # Link do dziennego pliku XLSX/CSV [11]
     
     title_resource = ET.SubElement(resource, 'title')
     ET.SubElement(title_resource, 'polish').text = f"Ceny ofertowe mieszkań dewelopera {CONFIG['DEWELOPER_NAZWA']} {today_str}"
@@ -86,26 +89,28 @@ def create_resource_element(resources_element_et, today_str, today_str_compact, 
     description_resource = ET.SubElement(resource, 'description')
     desc_res_text_pl = (f"Dane dotyczące cen ofertowych mieszkań dewelopera {CONFIG['DEWELOPER_NAZWA']} udostępnione {today_str} "
                         f"zgodnie z art. 19b. ust. 1 Ustawy.") 
-    ET.SubElement(description_resource, 'polish').text = desc_res_text_pl # [7]
+    ET.SubElement(description_resource, 'polish').text = desc_res_text_pl
     ET.SubElement(description_resource, 'english').text = desc_res_text_pl
     
-    ET.SubElement(resource, 'availability').text = 'local' # [8]
-    ET.SubElement(resource, 'dataDate').text = today_str # Data, której dotyczą dane [6]
+    ET.SubElement(resource, 'availability').text = 'local' # Plik jest udostępniany z repozytorium OD [12]
+    ET.SubElement(resource, 'dataDate').text = today_str # Data raportowania [11]
 
     special_signs = ET.SubElement(resource, 'specialSigns')
-    ET.SubElement(special_signs, 'specialSign').text = 'X' # Wymagany znak umowny "X" [9, 10]
+    ET.SubElement(special_signs, 'specialSign').text = 'X' # Wymagany znak umowny [13, 14]
     
-    ET.SubElement(resource, 'hasDynamicData').text = 'false' # [11]
-    ET.SubElement(resource, 'hasHighValueData').text = 'true' # [11]
-    ET.SubElement(resource, 'hasHighValueDataFromEuropeanCommissionList').text = 'false' # [12]
-    ET.SubElement(resource, 'hasResearchData').text = 'false' # [12]
-    ET.SubElement(resource, 'containsProtectedData').text = 'false' # [12]
+    ET.SubElement(resource, 'hasDynamicData').text = 'false'
+    ET.SubElement(resource, 'hasHighValueData').text = 'true'
+    ET.SubElement(resource, 'hasHighValueDataFromEuropeanCommissionList').text = 'false'
+    ET.SubElement(resource, 'hasResearchData').text = 'false'
+    ET.SubElement(resource, 'containsProtectedData').text = 'false'
     
     print(f"  Dodano nowy zasób dla daty: {today_str}.")
     return True
 
 def format_xml(root_element):
-    """Formatowanie XML za pomocą minidom, z zachowaniem przestrzeni nazw."""
+    """
+    Formatowanie XML za pomocą minidom, z przywróceniem przestrzeni nazw.
+    """
     xml_string_raw = ET.tostring(root_element, 'utf-8', method='xml')
     
     parsed_string = minidom.parseString(xml_string_raw)
@@ -116,7 +121,7 @@ def format_xml(root_element):
     
     formatted_lines = [line for line in lines if line.strip() and not line.startswith('<?xml')]
     
-    # Przywracanie poprawnego formatu tagu root z przestrzenią nazw
+    # Przywracanie poprawnego formatu tagu root z przestrzenią nazw p:datasets
     final_xml = '\n'.join(formatted_lines).replace('<datasets>', f'p:datasets xmlns:p="{CONFIG["SCHEMA_URL"]}">')
     final_xml = final_xml.replace('</datasets>', f'</p:datasets>')
 
@@ -144,6 +149,7 @@ def generate_xml_and_md5():
             tree_et = ET.parse(xml_file_path)
             root_et = tree_et.getroot()
             
+            # Wyszukiwanie istniejącej sekcji <resources> z przestrzenią nazw
             resources_xpath = f".//{{{CONFIG['SCHEMA_URL']}}}resources"
             resources_element_et = root_et.find(resources_xpath)
 
@@ -154,12 +160,14 @@ def generate_xml_and_md5():
             print(f"Błąd podczas parsowania istniejącego pliku XML ({e}). Przechodzę do trybu tworzenia od nowa.")
             root_et = None 
 
-    # --- 2. Tryb Tworzenia od Nowa ---
+    # --- 2. Tryb Tworzenia od Nowa (Pierwsze uruchomienie / Błąd Parsowania) ---
     if root_et is None:
         print("  Plik XML nie istnieje lub parsowanie nie powiodło się. Tworzenie nowej struktury.")
         
+        # Tworzenie elementu głównego: p:datasets (zgodnie ze schematem)
         root_placeholder = ET.Element(f"{CONFIG['NAMESPACE']}:datasets", attrib={f"xmlns:{CONFIG['NAMESPACE']}": CONFIG['SCHEMA_URL']})
         
+        # Tworzenie struktury <dataset> i uzyskanie referencji do <resources>
         root_et, resources_element_et = create_dataset_structure(root_placeholder)
 
     # --- 3. Dodawanie Nowego Zasobu ---
@@ -175,16 +183,14 @@ def generate_xml_and_md5():
     
     # --- 5. Generowanie MD5 ---
     
-    # Suma kontrolna musi być liczona z finalnej zawartości XML [13, 14]
     md5_sum = hashlib.md5(final_xml_data).hexdigest()
     md5_file_path = f"{CONFIG['XML_FILENAME']}.md5"
     
-    # Hash musi być małymi literami [13]
+    # Hash musi być małymi literami [15]
     with open(md5_file_path, "w") as f:
         f.write(md5_sum)
-    print(f"  Plik MD5 został ZAKTUALIZOWANY i zapisany: {xml_file_path}")
+    print(f"  Plik MD5 został ZAKTUALIZOWANY i zapisany: {md5_file_path}")
 
 
 if __name__ == "__main__":
     generate_xml_and_md5()
-
