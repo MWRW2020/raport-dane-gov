@@ -4,21 +4,17 @@ name: Codzienne generowanie raportu dla dane.gov.pl
 on:
   # Uruchamia proces automatycznie codziennie
   schedule:
-    - cron: '49 22 * * *' # Czas UTC
-  # Umożliwia ręczne uruchomienie procesu w interfejsie GitHub
+    - cron: '49 22 * * *' 
   workflow_dispatch: 
 
-# Definiuje uprawnienia wymagane dla automatu
+# Definiuje uprawnienia
 permissions:
   contents: write # KRYTYCZNE DLA AKUMULACJI
   pages: write 
   id-token: write 
 
-# Definiuje zadania do wykonania
 jobs:
-  # Zadanie 1: Generowanie plików, akumulacja i przygotowanie artefaktu
   build:
-    # OSTATECZNA ZMIANA: Wymuszenie nowego środowiska wykonawczego
     runs-on: ubuntu-22.04
     steps:
       
@@ -39,17 +35,23 @@ jobs:
         with:
           python-version: '3.10'
           
-      # Krok 4: Uruchomienie skryptu Pythona (Akumulacja Danych)
-      - name: Run script to generate XML and MD5 (Accumulation Mode)
-        run: python generator_danych_gov.py
-        
+      # ***************************************************************
+      # Krok 4: Uruchomienie skryptu w izolacji
+      # Zamiast polegać na prostym "python skrypt.py", używamy pełnej ścieżki i pip
+      # (Maksymalne wymuszenie czystego środowiska)
+      - name: Run script in isolated environment
+        run: |
+          # Instalacja wymaganych bibliotek (jeśli są) w czystym środowisku
+          pip install --upgrade pip
+          # Uruchomienie skryptu Pythona
+          python generator_danych_gov.py
+      # ***************************************************************
+          
       # Krok 5: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
       - name: Prepare daily data file (XLSX/CSV)
         run: | 
-          # POBIERANIE ZMIENNYCH Z PLIKU CONFIG W PYTHONIE
           INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") 
           TODAY_STR=$(date +'%Y-%m-%d')
-          # Kopiowanie wzorca na unikalną, datowaną nazwę
           cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
           
       # KROK 6: ZAPISANIE (COMMIT) ZAAKUMULOWANYCH PLIKÓW
