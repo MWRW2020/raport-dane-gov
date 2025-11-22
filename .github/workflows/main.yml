@@ -10,7 +10,7 @@ on:
 
 # Definiuje uprawnienia wymagane dla automatu
 permissions:
-  contents: write # KONIECZNE DLA AKUMULACJI [4]
+  contents: write 
   pages: write 
   id-token: write 
 
@@ -19,6 +19,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # ***************************************************************
+      # NOWY, RADYKALNY KROK RESETUJĄCY: Usuwa potencjalnie buforowane pliki przed checkoutem
+      - name: Hard Reset Cache (Pre-Checkout Cleanup)
+        run: |
+          rm -rf $GITHUB_WORKSPACE/*
+          
       # Krok 1: Pobranie kodu repozytorium (Checkout)
       - name: Checkout repository (Read/Write)
         uses: actions/checkout@v3 
@@ -32,9 +38,8 @@ jobs:
           python-version: '3.10'
           
       # Krok 3: Uruchomienie skryptu Pythona (Akumulacja Danych)
-      # ZMIENIONO NAZWĘ PLIKU PYTHON
       - name: Run script to generate XML and MD5 (Accumulation Mode)
-        run: python generator_raportu_v2.py
+        run: python generator_danych_gov.py
         
       # Krok 3.1: Wymuszenie przełamania buforowania (Krok Diagnostyczny)
       - name: Force buffer refresh
@@ -43,9 +48,10 @@ jobs:
       # Krok 4: Przygotowanie dziennego pliku z danymi (kopiowanie wzorca XLSX/CSV)
       - name: Prepare daily data file (XLSX/CSV)
         run: | 
-          # Używamy nowej nazwy skryptu
-          INWESTYCJA_ID=$(python -c "from generator_raportu_v2 import CONFIG; print(CONFIG['INWESTYCJA_ID'])") 
+          # POBIERANIE ZMIENNYCH Z PLIKU CONFIG W PYTHONIE
+          INWESTYCJA_ID=$(python -c "from generator_danych_gov import CONFIG; print(CONFIG['INWESTYCJA_ID'])") 
           TODAY_STR=$(date +'%Y-%m-%d')
+          # Kopiowanie wzorca na unikalną, datowaną nazwę
           cp dane_wzor.xlsx "ceny-${INWESTYCJA_ID}-${TODAY_STR}.xlsx"
           
       # KROK 5: ZAPISANIE (COMMIT) ZAAKUMULOWANYCH PLIKÓW
