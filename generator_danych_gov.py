@@ -8,11 +8,11 @@ import re
 # --- Konfiguracja (ZMIEŃ TE WARTOŚCI NA SWOJE) ---
 
 # 1. Nazwa dewelopera.
-DEWELOPER_NAME = "MWRW Deweloper"
+DEWELOPER_NAME = "MWRW Sp. z o.o."
 
 # 2. UNIKALNY, 36-ZNAKOWY ID ZBIORU DANYCH (Dataset) - NIE ZMIENIAĆ PO PIERWSZEJ PUBLIKACJI!
 # Proszę ZASTĄPIĆ TEN PRZYKŁAD SWOIM UNIKALNYM UUID (np. 123e4567-e89b-12d3-a456-426655440000)
-DEWELOPER_EXTIDENT = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0" 
+DEWELOPER_EXTIDENT = "9543cc89-477f-4e21-b865-2aef92679a20" 
 
 # 3. Baza URL Twojej strony na GitHub Pages
 RESOURCE_BASE_URL = "https://mwrw2020.github.io/raport-dane-gov"
