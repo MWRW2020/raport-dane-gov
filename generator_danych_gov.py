@@ -6,27 +6,14 @@ import os
 import re
 
 # --- Konfiguracja (ZMIEŃ TE WARTOŚCI NA SWOJE) ---
-
-# 1. Nazwa dewelopera.
+# Ważne: Wprowadź tutaj swoje wartości!
 DEWELOPER_NAME = "MWRW Sp. z o.o."
-
-# 2. UNIKALNY, 36-ZNAKOWY ID ZBIORU DANYCH (Dataset) - NIE ZMIENIAĆ PO PIERWSZEJ PUBLIKACJI!
 DEWELOPER_EXTIDENT = "9543cc89-477f-4e21-b865-2aef92679a20" 
-
-# 3. Baza URL Twojej strony na GitHub Pages
 RESOURCE_BASE_URL = "https://mwrw2020.github.io/raport-dane-gov"
-
-# 4. Nazwa pliku z rzeczywistymi danymi (musi istnieć w repozytorium)
 ACTUAL_DATA_FILENAME = "dane_wzor.xlsx"
-
-# 5. Ograniczenie: ile dni wstecz zasoby mają być trzymane w pliku XML
-MAX_HISTORY_DAYS = 3000 
-
-# Nazwy generowanych plików wyjściowych
+MAX_HISTORY_DAYS = 3000
 XML_FILE_NAME = "raport_cen_mieszkan.xml"
 MD5_FILE_NAME = "raport_cen_mieszkan.md5"
-
-# Przestrzenie nazw
 NS = {'ns2': 'urn:otwarte-dane:harvester:1.13'}
 # ----------------------------------------------------
 
@@ -34,8 +21,6 @@ NS = {'ns2': 'urn:otwarte-dane:harvester:1.13'}
 TODAY_DATE = date.today()
 TODAY_DATE_STR = TODAY_DATE.isoformat() 
 TODAY_DATE_ID = TODAY_DATE.strftime("%Y%m%d")
-
-# Unikalny ID zasobu (Resource) dla dzisiejszego dnia
 RESOURCE_EXTIDENT_TODAY = f"ZASOB_{DEWELOPER_EXTIDENT}_{TODAY_DATE_ID}"
 
 def prettify_xml(elem):
@@ -61,8 +46,7 @@ def create_base_dataset():
     ET.SubElement(description, 'polish').text = desc_base
     ET.SubElement(description, 'english').text = desc_base.replace("Zbiór danych zawiera informacje", "The dataset contains information")
 
-    # Metadane techniczne zbioru (Używamy bezpiecznej składni)
-    
+    # Metadane techniczne zbioru (Bezpieczna składnia)
     update_freq_elem = ET.SubElement(dataset, 'updateFrequency')
     update_freq_elem.text = 'daily'
     
@@ -78,10 +62,10 @@ def create_base_dataset():
     research_data_elem = ET.SubElement(dataset, 'hasResearchData')
     research_data_elem.text = 'false'
     
-    # Kategoria: Gospodarka i finanse (Bezpieczna składnia)
+    # Kategoria: Gospodarka i finanse (BEZPIECZNA SKŁADNIA)
     categories = ET.SubElement(dataset, 'categories')
     category_elem = ET.SubElement(categories, 'category')
-    category_elem.text = 'ECON'
+    category_elem.text = 'ECON' 
     
     # Dodanie sekcji TAGS
     tags = ET.SubElement(dataset, 'tags')
@@ -119,10 +103,131 @@ def create_resource_element(data_date_str):
     special_signs = ET.SubElement(resource, 'specialSigns')
     ET.SubElement(special_signs, 'specialSign').text = 'X' 
 
-    # Dodatkowe metadane zasobu (Używamy bezpiecznej składni)
-    
+    # Dodatkowe metadane zasobu (Bezpieczna składnia)
     res_dynamic_data_elem = ET.SubElement(resource, 'hasDynamicData')
     res_dynamic_data_elem.text = 'false'
     
     res_high_value_data_elem = ET.SubElement(resource, 'hasHighValueData')
     res_high_value_data_elem.text = 'true'
+    
+    res_high_value_ec_elem = ET.SubElement(resource, 'hasHighValueDataFromEuropeanCommissionList')
+    res_high_value_ec_elem.text = 'false'
+    
+    res_research_data_elem = ET.SubElement(resource, 'hasResearchData')
+    res_research_data_elem.text = 'false'
+    
+    res_protected_data_elem = ET.SubElement(resource, 'containsProtectedData')
+    res_protected_data_elem.text = 'false'
+    
+    return resource
+
+def generate_xml_and_md5():
+    
+    # Wyszukiwanie tagów z poprawną przestrzenią nazw
+    dataset_tag = f"{{{NS['ns2']}}}dataset"
+    resources_tag = f"{{{NS['ns2']}}}resources"
+    resource_tag = f"{{{NS['ns2']}}}resource"
+    extident_tag = f"{{{NS['ns2']}}}extIdent"
+    data_date_tag = f"{{{NS['ns2']}}}dataDate"
+
+    # 1. Ładowanie istniejącego XML lub tworzenie nowego
+    if os.path.exists(XML_FILE_NAME):
+        print(f"Znaleziono istniejący plik {XML_FILE_NAME}. Aktualizacja...")
+        try:
+            for prefix, uri in NS.items():
+                ET.register_namespace(prefix, uri)
+                
+            tree = ET.parse(XML_FILE_NAME)
+            root = tree.getroot()
+            
+            dataset = root.find(dataset_tag)
+            resources_container = dataset.find(resources_tag)
+
+            if dataset is None or resources_container is None:
+                # W przypadku problemów, tworzymy nowy dataset z istniejącego roota (jeśli to możliwe)
+                if dataset is None:
+                    dataset = create_base_dataset()
+                    root.append(dataset)
+                    resources_container = dataset.find(resources_tag)
+                elif resources_container is None:
+                    resources_container = ET.SubElement(dataset, resources_tag.split('}')[-1])
+                
+                print("Przywrócono brakujące elementy XML.")
+
+        except Exception as e:
+            print(f"Błąd podczas parsowania XML ({e}). Tworzenie nowej struktury.")
+            root = ET.Element(f"{{{NS['ns2']}}}datasets",
+                              attrib={'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance"})
+            dataset = create_base_dataset()
+            root.append(dataset)
+            resources_container = dataset.find(resources_tag)
+
+    else:
+        print(f"Nie znaleziono pliku {XML_FILE_NAME}. Tworzenie od podstaw.")
+        root = ET.Element(f"{{{NS['ns2']}}}datasets",
+                          attrib={'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance"})
+        dataset = create_base_dataset()
+        root.append(dataset)
+        resources_container = dataset.find(resources_tag)
+
+    # 2. Usuwanie istniejącego zasobu dla dzisiejszej daty (zapobieganie duplikatom)
+    for res in resources_container.findall(resource_tag):
+        ext_ident_elem = res.find(extident_tag)
+        if ext_ident_elem is not None and ext_ident_elem.text == RESOURCE_EXTIDENT_TODAY:
+            resources_container.remove(res)
+            print(f"Zasób dla dnia {TODAY_DATE_STR} został zastąpiony.")
+            break
+            
+    # 3. Dodawanie nowego zasobu (aktualne dane)
+    new_resource = create_resource_element(TODAY_DATE_STR)
+    resources_container.append(new_resource)
+    print(f"Dodano nowy zasób dla dnia {TODAY_DATE_STR}.")
+    
+    # 4. Implementacja rolling window (usuwanie starych zasobów)
+    cutoff_date = TODAY_DATE - timedelta(days=MAX_HISTORY_DAYS)
+    resources_to_remove = []
+
+    for res in resources_container.findall(resource_tag):
+        resource_date = None
+        data_date_elem = res.find(data_date_tag)
+        
+        # Próba odczytu daty
+        if data_date_elem is not None and data_date_elem.text:
+            try:
+                resource_date = date.fromisoformat(data_date_elem.text)
+            except ValueError:
+                pass 
+
+        # Jeśli data jest starsza niż limit, oznacz do usunięcia
+        if resource_date is not None and resource_date < cutoff_date:
+            resources_to_remove.append(res)
+
+    for res in resources_to_remove:
+        resources_container.remove(res)
+        date_text = res.find(data_date_tag).text if res.find(data_date_tag) is not None else 'Nieznana'
+        print(f"Usunięto stary zasób (historia > {MAX_HISTORY_DAYS} dni) z datą {date_text}.")
+    
+    # 5. Zapis pliku XML
+    xml_output = prettify_xml(root)
+    with open(XML_FILE_NAME, 'w', encoding='utf-8') as f:
+        f.write(xml_output)
+    
+    print(f"\nGenerowanie zakończone. Liczba zasobów w pliku XML: {len(resources_container.findall(resource_tag))}")
+    print(f"Wygenerowano plik XML: {XML_FILE_NAME}")
+    
+    # 6. Generowanie MD5
+    with open(XML_FILE_NAME, 'rb') as f:
+        data = f.read()
+
+    md5_hash = hashlib.md5(data).hexdigest()
+    
+    with open(MD5_FILE_NAME, 'w', encoding='utf-8') as f:
+        f.write(md5_hash)
+        
+    print(f"Wygenerowano plik MD5: {MD5_FILE_NAME} z hashem: {md5_hash}")
+
+if __name__ == "__main__":
+    try:
+        generate_xml_and_md5()
+    except Exception as e:
+        print(f"Wystąpił krytyczny błąd podczas generowania plików: {e}")
