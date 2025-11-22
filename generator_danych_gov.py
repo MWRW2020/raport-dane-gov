@@ -2,7 +2,7 @@ import hashlib
 import os
 from datetime import datetime
 from xml.etree import ElementTree as ET
-from xml.dom import minidom # Używane tylko do formatowania (pretty-print)
+from xml.dom import minidom 
 
 # Rejestracja przestrzeni nazw jest kluczowa dla ElementTree, aby działało parsowanie
 ET.register_namespace('p', 'https://www.dane.gov.pl/static/xml/otwarte_dane_latest.xsd')
@@ -24,14 +24,14 @@ CONFIG = {
 def create_dataset_structure(root):
     """
     Tworzy podstawową strukturę <dataset> dla pierwszego uruchomienia.
-    Zawiera KOREKTĘ błędu TypeError w sekcji <categories>.
+    UWAGA: Zawiera trwałą KOREKTĘ błędu TypeError w sekcji <categories> (linie 79-80).
     """
     
     # Używamy pełnej nazwy elementu z przestrzenią nazw
+    # Atrybut status='draft' jest na czas testów. Docelowo: 'published' [3].
     dataset = ET.SubElement(root, f"{{{CONFIG['SCHEMA_URL']}}}dataset", status='draft') 
     
-    # Tworzenie elementów bez przestrzeni nazw (automatycznie dziedziczą z root)
-    ET.SubElement(dataset, 'extIdent').text = f"dataset_{CONFIG['INWESTYCJA_ID']}"
+    ET.SubElement(dataset, 'extIdent').text = f"dataset_{CONFIG['INWESTYCJA_ID']}" [4]
     
     title_dataset = ET.SubElement(dataset, 'title')
     ET.SubElement(title_dataset, 'polish').text = f"Ceny ofertowe mieszkań dewelopera {CONFIG['DEWELOPER_NAZWA']} w {CONFIG['ROK_ZBIORU']} r."
@@ -47,21 +47,22 @@ def create_dataset_structure(root):
     ET.SubElement(dataset, 'url').text = CONFIG['INWESTYCJA_URL']
     
     # *******************************************************************
-    # PRAWIDŁOWA KOREKTA BŁĘDU: Element <categories> jest zagnieżdżony.
+    # PRAWIDŁOWA KOREKTA BŁĘDU: ZAPEWNIENIE ZAGNIEŻDŻONEJ STRUKTURY
+    # Wymagane jest <categories><category>ECON</category></categories> [1, 2].
     categories = ET.SubElement(dataset, 'categories') # Tworzymy tag nadrzędny
-    ET.SubElement(categories, 'category').text = 'ECON' # Tworzymy tag zagnieżdżony (Gospodarka i finanse) [2]
+    ET.SubElement(categories, 'category').text = 'ECON' # Tworzymy tag zagnieżdżony
     # *******************************************************************
     
     tags = ET.SubElement(dataset, 'tags')
     ET.SubElement(tags, 'tag').text = 'deweloper'
     
-    ET.SubElement(dataset, 'updateFrequency').text = 'daily' # Wymagane "daily" [7]
-    ET.SubElement(dataset, 'hasDynamicData').text = 'false' # Wymagane "false" [7]
-    ET.SubElement(dataset, 'hasHighValueData').text = 'true' # Wymagane "true" [7]
-    ET.SubElement(dataset, 'hasHighValueDataFromEuropeanCommissionList').text = 'false' # Wymagane "false" [8]
-    ET.SubElement(dataset, 'hasResearchData').text = 'false' # Wymagane "false" [8]
+    ET.SubElement(dataset, 'updateFrequency').text = 'daily' [5]
+    ET.SubElement(dataset, 'hasDynamicData').text = 'false' [5]
+    ET.SubElement(dataset, 'hasHighValueData').text = 'true' [5]
+    ET.SubElement(dataset, 'hasHighValueDataFromEuropeanCommissionList').text = 'false' [6]
+    ET.SubElement(dataset, 'hasResearchData').text = 'false' [6]
     
-    resources = ET.SubElement(dataset, 'resources')
+    resources = ET.SubElement(dataset, 'resources') [2]
     
     return root, resources
 
@@ -76,11 +77,11 @@ def create_resource_element(resources_element_et, today_str, today_str_compact, 
         print(f"  Zasób dla daty {today_str} (extIdent: {ext_ident_today}) już istnieje w pliku. Nie dodano nowego wpisu.")
         return False
         
-    # 2. Tworzenie i dodawanie nowego zasobu (status='draft' na czas testów) [9]
+    # 2. Tworzenie i dodawanie nowego zasobu (status='draft' na czas testów) [7]
     resource = ET.SubElement(resources_element_et, 'resource', status='draft')
     
-    ET.SubElement(resource, 'extIdent').text = ext_ident_today 
-    ET.SubElement(resource, 'url').text = daily_data_url
+    ET.SubElement(resource, 'extIdent').text = ext_ident_today [8]
+    ET.SubElement(resource, 'url').text = daily_data_url [8]
     
     title_resource = ET.SubElement(resource, 'title')
     ET.SubElement(title_resource, 'polish').text = f"Ceny ofertowe mieszkań dewelopera {CONFIG['DEWELOPER_NAZWA']} {today_str}"
@@ -88,21 +89,21 @@ def create_resource_element(resources_element_et, today_str, today_str_compact, 
     
     description_resource = ET.SubElement(resource, 'description')
     desc_res_text_pl = (f"Dane dotyczące cen ofertowych mieszkań dewelopera {CONFIG['DEWELOPER_NAZWA']} udostępnione {today_str} "
-                        f"zgodnie z art. 19b. ust. 1 Ustawy.") # [10]
+                        f"zgodnie z art. 19b. ust. 1 Ustawy.") 
     ET.SubElement(description_resource, 'polish').text = desc_res_text_pl
     ET.SubElement(description_resource, 'english').text = desc_res_text_pl
     
-    ET.SubElement(resource, 'availability').text = 'local' # Wymagane 'local' [11]
-    ET.SubElement(resource, 'dataDate').text = today_str # Wymagany format RRRR-MM-DD [11]
+    ET.SubElement(resource, 'availability').text = 'local' [9]
+    ET.SubElement(resource, 'dataDate').text = today_str [9]
 
-    special_signs = ET.SubElement(resource, 'specialSigns')
-    ET.SubElement(special_signs, 'specialSign').text = 'X' # Wymagany znak umowny "X" [12]
+    special_signs = ET.SubElement(resource, 'specialSigns') [10]
+    ET.SubElement(special_signs, 'specialSign').text = 'X' [10]
     
-    ET.SubElement(resource, 'hasDynamicData').text = 'false'
-    ET.SubElement(resource, 'hasHighValueData').text = 'true'
-    ET.SubElement(resource, 'hasHighValueDataFromEuropeanCommissionList').text = 'false'
-    ET.SubElement(resource, 'hasResearchData').text = 'false'
-    ET.SubElement(resource, 'containsProtectedData').text = 'false'
+    ET.SubElement(resource, 'hasDynamicData').text = 'false' [11]
+    ET.SubElement(resource, 'hasHighValueData').text = 'true' [11]
+    ET.SubElement(resource, 'hasHighValueDataFromEuropeanCommissionList').text = 'false' [12]
+    ET.SubElement(resource, 'hasResearchData').text = 'false' [12]
+    ET.SubElement(resource, 'containsProtectedData').text = 'false' [12]
     
     print(f"  Dodano nowy zasób dla daty: {today_str}.")
     return True
@@ -117,20 +118,13 @@ def format_xml(root_element):
     # Używamy minidom do formatowania (pretty-print)
     parsed_string = minidom.parseString(xml_string_raw)
     
-    # top rettyxml zwraca string w kodowaniu utf-8
     pretty_xml = parsed_string.toprettyxml(indent="  ", encoding="utf-8")
     
-    # Konwersja na string i usunięcie zbędnego wiersza deklaracji XML
+    # Minidom może dodawać niechciane nagłówki i puste linie, które usuwamy
     pretty_xml_str = pretty_xml.decode('utf-8')
-    
-    # ElementTree domyślnie dodaje deklarację xmlns, ale minidom jej nie dodaje do root.
-    # W celu zachowania czystej struktury wynikowej, przekazujemy surowy string do minidom.
-    
-    # Minidom dodaje niepotrzebny nagłówek XML. Usuwamy go.
     lines = pretty_xml_str.split('\n')
     formatted_lines = [line for line in lines if line.strip() and not line.startswith('<?xml')]
     
-    # Ponownie serializujemy, aby uzyskać finalny, poprawnie sformatowany XML
     return '\n'.join(formatted_lines).encode('utf-8')
 
 
@@ -144,12 +138,14 @@ def generate_xml_and_md5():
     daily_data_filename = f"ceny-{CONFIG['INWESTYCJA_ID']}-{today_str}.xlsx"
     daily_data_url = CONFIG['DANE_BASE_URL'] + daily_data_filename
     
+    resources_element_et = None
+    root_et = None
+
     # --- 1. Tryb Wczytywania (Akumulacja) ---
     if os.path.exists(xml_file_path):
         print(f"  Znaleziono istniejący plik: {xml_file_path}. Aktywacja trybu AKUMULACJI.")
         
         try:
-            # Wczytanie istniejącego pliku za pomocą ElementTree
             tree_et = ET.parse(xml_file_path)
             root_et = tree_et.getroot()
             
@@ -162,26 +158,23 @@ def generate_xml_and_md5():
             
         except Exception as e:
             print(f"Błąd podczas parsowania istniejącego pliku XML ({e}). Przechodzę do trybu tworzenia od nowa.")
-            root_et = None # Wymuszamy przejście do trybu tworzenia
+            root_et = None 
 
     # --- 2. Tryb Tworzenia od Nowa (Pierwsze uruchomienie / Błąd Parsowania) ---
     if root_et is None:
         print("  Plik XML nie istnieje lub parsowanie nie powiodło się. Tworzenie nowej struktury.")
         
-        # Definicja elementu głównego: p:datasets
+        # Tworzenie elementu głównego: p:datasets (zgodnie ze schematem)
         root_et = ET.Element(f"{CONFIG['NAMESPACE']}:datasets", attrib={f"xmlns:{CONFIG['NAMESPACE']}": CONFIG['SCHEMA_URL']})
         
         # Tworzenie struktury <dataset> i uzyskanie referencji do <resources>
-        # Uwaga: Funkcja create_dataset_structure zwraca teraz zagnieżdżone elementy
         root_et, resources_element_et = create_dataset_structure(root_et)
 
     # --- 3. Dodawanie Nowego Zasobu ---
-    # Ta funkcja obsługuje sprawdzenie, czy zasób na dany dzień już istnieje
     create_resource_element(resources_element_et, today_str, today_str_compact, daily_data_url)
 
     # --- 4. Zapisywanie pliku XML ---
     
-    # Generowanie finalnego XML (z przestrzeniami nazw i formatowaniem)
     final_xml_data = format_xml(root_et)
     
     with open(xml_file_path, "wb") as f:
@@ -193,7 +186,7 @@ def generate_xml_and_md5():
     md5_sum = hashlib.md5(final_xml_data).hexdigest()
     md5_file_path = f"{CONFIG['XML_FILENAME']}.md5"
     
-    # Wymóg: hash musi być małymi literami [13]
+    # Hash musi być małymi literami [13]
     with open(md5_file_path, "w") as f:
         f.write(md5_sum)
     print(f"  Plik MD5 został ZAKTUALIZOWANY i zapisany: {md5_file_path}")
