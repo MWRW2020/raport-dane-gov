@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    # Uruchomienie o północy (00:00 UTC) każdego dnia (czyli ok. 1:00/2:00 CET/CEST)
+    # Uruchomienie o północy (00:00 UTC) każdego dnia
     - cron: '0 0 * * *'
   workflow_dispatch:
 
@@ -15,9 +15,9 @@ jobs:
     
     # Ustawienie uprawnień do repozytorium
     permissions:
-      contents: write # Wymagane do zapisu wygenerowanych plików (XML i MD5)
-      pages: write    # Wymagane do publikacji na GitHub Pages
-      id-token: write # Wymagane do uwierzytelniania w Pages
+      contents: write 
+      pages: write    
+      id-token: write 
 
     steps:
       - name: 1. Checkout repository (Read/Write)
@@ -28,28 +28,25 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: 2.5. Czyszczenie pliku z niewidocznych znaków (FIX)
-        # Ten krok usuwa znaki niełamiącej spacji (\xC2\xA0) i powrotu karetki (\r), 
-        # które mogły trafić do pliku podczas kopiowania i powodują błąd 'TypeError'.
+      - name: 2.5. DIAGNOSTYKA BŁĘDNYCH ZNAKÓW
+        # Użycie 'cat -v' by pokazać niewidzialne znaki Unicode w pliku (np. M-A dla niełamiącej spacji)
         run: |
-          echo "Czyszczenie pliku generator_danych_gov.py z ukrytych znaków..."
-          # Usuń znaki niełamiącej spacji (NBSP)
-          sed -i 's/[\xC2\xA0]//g' generator_danych_gov.py
-          # Usuń znaki powrotu karetki (CR)
-          sed -i 's/[\r]//g' generator_danych_gov.py
-          echo "Plik został wyczyszczony."
+          echo "### DIAGNOSTYKA - Analiza pliku generator_danych_gov.py ###"
+          echo "--- Uwaga: '^M' to CR/Windows, 'M-A' to często ukryte spacje, '^I' to tabulatory. ---"
+          # Wyświetla pierwszych 80 linii z widocznymi ukrytymi znakami
+          cat -v generator_danych_gov.py | head -n 80
+          echo "### KONIEC DIAGNOSTYKI ###"
 
       - name: 3. Uruchomienie skryptu generującego XML i MD5
-        # Wygeneruje raport_cen_mieszkan.xml i raport_cen_mieszkan.md5
+        # Ten krok się nadal nie powiedzie, ale my chcemy zobaczyć logi z poprzedniego kroku
         run: python generator_danych_gov.py
-
+        
       - name: 4. Konfiguracja GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: 5. Wgranie artefaktów do Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          # Katalog, który zostanie opublikowany (zawiera XML, MD5, XLSX)
           path: './'
 
       - name: 6. Publikacja na GitHub Pages
