@@ -1,5 +1,5 @@
 #!/bin/bash
-
+git config --global credential.helper store
 # Ustawienie ścieżki do katalogu projektu
 PROJECT_DIR="/home/MWRW/raport-dane-gov" # ZMIEŃ NA SWOJĄ NAZWĘ UŻYTKOWNIKA!
 VENV_DIR="$PROJECT_DIR/venv"
