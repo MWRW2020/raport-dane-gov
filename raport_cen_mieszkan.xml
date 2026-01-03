@@ -924,6 +924,28 @@
         <hasResearchData>false</hasResearchData>
         <containsProtectedData>false</containsProtectedData>
       </resource>
+      <resource status="published">
+        <extIdent>ZASOB_9543cc89-477f-4e21-6865-2aef92679a20_20260103</extIdent>
+        <url>https://mwrw2020.github.io/raport-dane-gov/dane_wzor.xlsx</url>
+        <title>
+          <polish>Ceny ofertowe mieszkań dewelopera MWRW Sp. z o.o. 2026-01-03</polish>
+          <english>Offer prices for developer's apartments MWRW Sp. z o.o. 2026-01-03</english>
+        </title>
+        <description>
+          <polish>Dane dotyczące cen ofertowych mieszkań dewelopera MWRW Sp. z o.o. udostępnione 2026-01-03 zgodnie z art. 19b. ust. 1 Ustawy z dnia 20 maja 2021 r. o ochronie praw nabywcy lokalu mieszkalnego lub domu jednorodzinnego oraz Deweloperskim Funduszu Gwarancyjnym (Dz. U. z 2024 r. poz. 695).</polish>
+          <english>Data on offer prices mieszkań dewelopera MWRW Sp. z o.o. udostępnione 2026-01-03 zgodnie z art. 19b. ust. 1 Ustawy z dnia 20 maja 2021 r. o ochronie praw nabywcy lokalu mieszkalnego lub domu jednorodzinnego oraz Deweloperskim Funduszu Gwarancyjnym (Dz. U. z 2024 r. poz. 695).</english>
+        </description>
+        <availability>local</availability>
+        <dataDate>2026-01-03</dataDate>
+        <specialSigns>
+          <specialSign>X</specialSign>
+        </specialSigns>
+        <hasDynamicData>false</hasDynamicData>
+        <hasHighValueData>true</hasHighValueData>
+        <hasHighValueDataFromEuropeanCommissionList>false</hasHighValueDataFromEuropeanCommissionList>
+        <hasResearchData>false</hasResearchData>
+        <containsProtectedData>false</containsProtectedData>
+      </resource>
     </resources>
   </dataset>
 </datasets>
