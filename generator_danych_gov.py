@@ -80,14 +80,18 @@ def generate_xml():
     # 5. Konwersja i czyszczenie końcowe
     xml_content = ET.tostring(root, encoding="utf-8").decode("utf-8")
 
-    # Brutalne usuwanie błędnych spacji wykrytych w raporcie
-    xml_content = xml_content.replace(": harvester", ":harvester")
-    xml_content = xml_content.replace("European Commission", "EuropeanCommission")
-    xml_content = xml_content.replace("From European", "FromEuropean")
-    xml_content = xml_content.replace("Protected Data", "ProtectedData")
-    xml_content = xml_content.replace("Commission List", "CommissionList")
-    # Naprawa spacji w identyfikatorze z 21 stycznia
-    xml_content = xml_content.replace("2aef92679a20 2026", "2aef92679a20_2026")
+    # PRECYZYJNA NAPRAWA BŁĘDÓW WIDOCZNYCH W RAPORCIE 15:29:
+    replacements = {
+        "urn:otwarte-dane: harvester": "urn:otwarte-dane:harvester",
+        "From European": "FromEuropean",
+        "Commission List": "CommissionList",
+        "Protected Data": "ProtectedData",
+        "European Commission": "EuropeanCommission",
+        "2aef92679a20 20260121": "2aef92679a20_20260121" # Naprawa dzisiejszego ID
+    }
+
+    for old, new in replacements.items():
+        xml_content = xml_content.replace(old, new)
 
     header = '<?xml version="1.0" encoding="UTF-8"?>\n'
     with open("raport_cen_mieszkan.xml", "w", encoding="utf-8") as f:
