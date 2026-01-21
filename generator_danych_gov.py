@@ -77,17 +77,17 @@ def generate_xml():
 
         current_date += datetime.timedelta(days=1)
 
-    # 5. Konwersja i czyszczenie końcowe
+    # 5. Konwersja i czyszczenie końcowe - TO MUSI BYĆ WEWNĄTRZ FUNKCJI
     xml_content = ET.tostring(root, encoding="utf-8").decode("utf-8")
 
-    # PRECYZYJNA NAPRAWA BŁĘDÓW WIDOCZNYCH W RAPORCIE 15:29:
+    # Precyzyjna naprawa błędów widocznych w logach
     replacements = {
         "urn:otwarte-dane: harvester": "urn:otwarte-dane:harvester",
         "From European": "FromEuropean",
         "Commission List": "CommissionList",
         "Protected Data": "ProtectedData",
         "European Commission": "EuropeanCommission",
-        "2aef92679a20 20260121": "2aef92679a20_20260121" # Naprawa dzisiejszego ID
+        "2aef92679a20 20260121": "2aef92679a20_20260121"
     }
 
     for old, new in replacements.items():
@@ -96,3 +96,8 @@ def generate_xml():
     header = '<?xml version="1.0" encoding="UTF-8"?>\n'
     with open("raport_cen_mieszkan.xml", "w", encoding="utf-8") as f:
         f.write(header + xml_content)
+
+# TA SEKCJA WYWOŁUJE FUNKCJĘ I MUSI BYĆ NA SAMYM DOLE (BEZ WCIĘĆ):
+if __name__ == "__main__":
+    generate_xml()
+    print("Sukces: Plik raport_cen_mieszkan.xml został wygenerowany.")
