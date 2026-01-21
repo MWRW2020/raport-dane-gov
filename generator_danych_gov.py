@@ -80,15 +80,17 @@ def generate_xml():
     # 5. Konwersja i czyszczenie końcowe
     xml_content = ET.tostring(root, encoding="utf-8").decode("utf-8")
 
-    # Usuwamy spację po dwukropku w schemaLocation, jeśli się pojawiła
-    xml_content = xml_content.replace("urn:otwarte-dane: harvester", "urn:otwarte-dane:harvester")
+    # USUNIĘCIE BŁĘDÓW WYKRYTYCH W PLIKU PDF:
+    # 1. Usuwamy spacje w adresach URI
+    xml_content = xml_content.replace(": harvester", ":harvester")
+
+    # 2. Usuwamy spacje wewnątrz długich tagów, które pojawiły się w raporcie
+    xml_content = xml_content.replace("From European", "FromEuropean")
+    xml_content = xml_content.replace("Commission List", "CommissionList")
+    xml_content = xml_content.replace("Protected Data", "ProtectedData")
+    xml_content = xml_content.replace("CommissionList", "CommissionList") # podwójne sprawdzenie
 
     header = '<?xml version="1.0" encoding="UTF-8"?>\n'
 
     with open("raport_cen_mieszkan.xml", "w", encoding="utf-8") as f:
         f.write(header + xml_content)
-
-# TA SEKCJA MUSI MIEĆ POPRAWNE WCIĘCIA:
-if __name__ == "__main__":
-    generate_xml()
-    print("Sukces: Plik raport_cen_mieszkan.xml został wygenerowany poprawnie.")
