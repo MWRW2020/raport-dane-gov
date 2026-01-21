@@ -80,17 +80,15 @@ def generate_xml():
     # 5. Konwersja i czyszczenie końcowe
     xml_content = ET.tostring(root, encoding="utf-8").decode("utf-8")
 
-    # USUNIĘCIE BŁĘDÓW WYKRYTYCH W PLIKU PDF:
-    # 1. Usuwamy spacje w adresach URI
+    # Brutalne usuwanie błędnych spacji wykrytych w raporcie
     xml_content = xml_content.replace(": harvester", ":harvester")
-
-    # 2. Usuwamy spacje wewnątrz długich tagów, które pojawiły się w raporcie
+    xml_content = xml_content.replace("European Commission", "EuropeanCommission")
     xml_content = xml_content.replace("From European", "FromEuropean")
-    xml_content = xml_content.replace("Commission List", "CommissionList")
     xml_content = xml_content.replace("Protected Data", "ProtectedData")
-    xml_content = xml_content.replace("CommissionList", "CommissionList") # podwójne sprawdzenie
+    xml_content = xml_content.replace("Commission List", "CommissionList")
+    # Naprawa spacji w identyfikatorze z 21 stycznia
+    xml_content = xml_content.replace("2aef92679a20 2026", "2aef92679a20_2026")
 
     header = '<?xml version="1.0" encoding="UTF-8"?>\n'
-
     with open("raport_cen_mieszkan.xml", "w", encoding="utf-8") as f:
         f.write(header + xml_content)
